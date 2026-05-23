@@ -222,15 +222,6 @@ button:active,
   font-size: clamp(1.2rem, 2.5vw, 1.7rem);
 }
 
-.action-subtitle {
-  display: block;
-  margin-top: 3px;
-  font-size: 0.48em;
-  font-weight: 760;
-  line-height: 1;
-  opacity: 0.82;
-}
-
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
@@ -786,15 +777,7 @@ canvas {
 }
 
 .scoring-screen .top-bar h2 {
-  display: inline-flex;
-  width: fit-content;
-  border-radius: 999px;
-  padding: 8px 13px;
-  color: #45756f;
-  background: #e6f5f2;
-  font-size: 0.95rem;
-  font-weight: 760;
-  line-height: 1.1;
+  font-size: clamp(2rem, 4.2vw, 2.65rem);
 }
 
 .scoring-screen .top-bar {
@@ -930,12 +913,6 @@ canvas {
   margin: 4px 0;
 }
 
-.score-option-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .choice-answer {
   display: inline-flex;
   width: fit-content;
@@ -947,51 +924,9 @@ canvas {
   font-weight: 820;
 }
 
-.score-choice-option {
-  min-height: 38px;
-  border: 2px solid var(--line);
-  border-radius: 999px;
-  padding: 7px 15px;
-  color: #9a918b;
-  background: rgba(255, 255, 255, 0.7);
-  font: inherit;
-  font-weight: 820;
-  cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
-}
-
-.score-choice-option:hover {
-  border-color: var(--secondary);
-  color: var(--secondary-strong);
-  background: #f4fbf9;
-}
-
-.score-choice-option:active {
-  transform: translateY(2px) scale(0.98);
-}
-
-.score-choice-option.selected {
-  border-color: var(--primary);
-  color: var(--primary-strong);
-  background: #fff2ef;
-}
-
 .text-answer {
   border-left: 4px solid var(--line);
   padding-left: 12px;
-}
-
-.score-text-input {
-  width: 100%;
-  min-height: 62px;
-  resize: vertical;
-  border: 2px solid var(--line);
-  border-radius: 14px;
-  padding: 10px 12px;
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.78);
-  font: inherit;
-  line-height: 1.45;
 }
 
 .score-answer-card img {
@@ -1188,10 +1123,6 @@ canvas {
 
 .dialog-confirm:hover {
   background: #f36d68;
-}
-
-.phone-orientation-lock {
-  display: none;
 }
 
 @media (max-width: 700px) {
@@ -1543,7 +1474,7 @@ canvas {
   }
 
   .scoring-screen .top-bar h2 {
-    font-size: 0.78rem;
+    font-size: 1.35rem;
   }
 
   .scoring-layout {
@@ -1591,18 +1522,6 @@ canvas {
     font-size: 0.82rem;
   }
 
-  .score-choice-option {
-    min-height: 32px;
-    padding: 5px 11px;
-    font-size: 0.8rem;
-  }
-
-  .score-text-input {
-    min-height: 54px;
-    padding: 8px 10px;
-    font-size: 0.78rem;
-  }
-
   .score-answer-card img {
     max-height: 10vh;
     margin-top: 5px;
@@ -1638,48 +1557,6 @@ canvas {
 }
 
 @media (max-width: 700px) and (max-height: 430px) and (orientation: landscape) {
-  body {
-    overflow: hidden;
-  }
-
-  .app-shell {
-    visibility: hidden;
-  }
-
-  .phone-orientation-lock {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background:
-      linear-gradient(135deg, rgba(255, 247, 240, 0.96), rgba(241, 250, 247, 0.96)),
-      var(--surface);
-    color: var(--ink);
-    text-align: center;
-  }
-
-  .phone-orientation-lock section {
-    max-width: 340px;
-    border-radius: 28px;
-    padding: 28px 24px;
-    background: rgba(255, 255, 255, 0.86);
-    box-shadow: var(--shadow-soft);
-  }
-
-  .phone-orientation-lock h2 {
-    margin: 0 0 10px;
-    color: var(--secondary-strong);
-    font-size: 1.35rem;
-  }
-
-  .phone-orientation-lock p {
-    margin: 0;
-    font-size: 0.95rem;
-    line-height: 1.6;
-  }
-
   .screen {
     padding: 7px 9px;
   }

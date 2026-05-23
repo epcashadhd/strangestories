@@ -469,11 +469,8 @@ function renderStory() {
   elements.prevButton.disabled = currentStoryIndex === 0;
   const isLastStory = currentStoryIndex === STORIES.length - 1;
   elements.nextButton.textContent = isLastStory ? "完成" : "下一題";
-  elements.tomBadge.textContent =
-    state.mode === "professional"
-      ? `Q${currentStoryIndex + 1}: TOM ability: ${story.ability}`
-      : `Q${currentStoryIndex + 1}`;
-  elements.tomBadge.classList.remove("hidden");
+  elements.tomBadge.textContent = `TOM ability: ${story.ability}`;
+  elements.tomBadge.classList.toggle("hidden", state.mode !== "professional");
   elements.questionList.innerHTML = "";
   elements.sideQuestionList.innerHTML = "";
 
@@ -575,7 +572,7 @@ function renderProfessionalAnswer(card, story, question) {
 }
 
 function setupCanvas(canvas, key, root, textarea) {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { desynchronized: true });
   let drawing = false;
   let tool = "idle";
   let eraserSize = 24;
@@ -586,7 +583,6 @@ function setupCanvas(canvas, key, root, textarea) {
   let pendingPoints = [];
   let animationFrame = null;
   let lastDrawn = null;
-  let suppressPointerUntil = 0;
 
   const getValue = () => {
     const [storyId, field] = key.split(".");
@@ -660,21 +656,11 @@ function setupCanvas(canvas, key, root, textarea) {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
+    const pressure = event.pointerType === "pen" ? Math.max(event.pressure || 0.5, 0.12) : 0.55;
     return {
       x,
       y,
-      nx: rect.width ? x / rect.width : 0,
-      ny: rect.height ? y / rect.height : 0,
-    };
-  }
-
-  function touchPoint(touch) {
-    const rect = canvas.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    return {
-      x,
-      y,
+      pressure,
       nx: rect.width ? x / rect.width : 0,
       ny: rect.height ? y / rect.height : 0,
     };
@@ -683,7 +669,8 @@ function setupCanvas(canvas, key, root, textarea) {
   function draw(from, to, strokeTool = tool, strokeWidth = eraserSize) {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.lineWidth = strokeTool === "eraser" ? strokeWidth : 3;
+    const pressureWidth = 1.4 + ((to.pressure ?? from.pressure ?? 0.55) * 3.2);
+    ctx.lineWidth = strokeTool === "eraser" ? strokeWidth : pressureWidth;
     ctx.strokeStyle = strokeTool === "eraser" ? "#ffffff" : "#111111";
     ctx.beginPath();
     ctx.moveTo(from.x, from.y);
@@ -724,12 +711,12 @@ function setupCanvas(canvas, key, root, textarea) {
     currentStroke = {
       tool,
       width: tool === "eraser" ? eraserSize : 3,
-      points: [{ x: startPoint.nx, y: startPoint.ny }],
+      points: [{ x: startPoint.nx, y: startPoint.ny, p: startPoint.pressure }],
     };
   }
 
   function continueStroke(nextPoint) {
-    currentStroke.points.push({ x: nextPoint.nx, y: nextPoint.ny });
+    currentStroke.points.push({ x: nextPoint.nx, y: nextPoint.ny, p: nextPoint.pressure });
     queueDraw(nextPoint);
     last = nextPoint;
   }
@@ -744,35 +731,7 @@ function setupCanvas(canvas, key, root, textarea) {
   }
 
   function canDrawWithPointer(event) {
-    if (event.pointerType === "touch") {
-      if (looksLikePalm(event)) return false;
-      return looksLikeStylus(event);
-    }
-    return true;
-  }
-
-  function canDrawWithTouch(touch) {
-    if (touch.touchType === "stylus") return true;
-    const width = Number(touch.radiusX || touch.webkitRadiusX) || 1;
-    const height = Number(touch.radiusY || touch.webkitRadiusY) || 1;
-    if (width >= 28 || height >= 28) return false;
-    return width <= 14 && height <= 14;
-  }
-
-  function changedTouch(event, id = activePointerId) {
-    return Array.from(event.changedTouches).find((touch) => `touch:${touch.identifier}` === id);
-  }
-
-  function looksLikeStylus(event) {
-    const width = Number(event.width) || 1;
-    const height = Number(event.height) || 1;
-    return width <= 18 && height <= 18;
-  }
-
-  function looksLikePalm(event) {
-    const width = Number(event.width) || 1;
-    const height = Number(event.height) || 1;
-    return width >= 32 || height >= 32;
+    return event.pointerType === "pen" || event.pointerType === "mouse";
   }
 
   function updatePointerMode() {
@@ -786,7 +745,6 @@ function setupCanvas(canvas, key, root, textarea) {
 
   canvas.addEventListener("pointerdown", (event) => {
     if (tool === "idle" || tool === "type") return;
-    if (Date.now() < suppressPointerUntil) return;
     if (!canDrawWithPointer(event)) return;
     event.preventDefault();
     beginStroke(point(event), event.pointerId);
@@ -797,7 +755,8 @@ function setupCanvas(canvas, key, root, textarea) {
     if (activePointerId !== event.pointerId) return;
     if (!canDrawWithPointer(event)) return;
     event.preventDefault();
-    continueStroke(point(event));
+    const events = event.getCoalescedEvents ? event.getCoalescedEvents() : [event];
+    events.forEach((coalescedEvent) => continueStroke(point(coalescedEvent)));
   });
   canvas.addEventListener("pointerup", (event) => {
     if (!drawing) return;
@@ -813,42 +772,6 @@ function setupCanvas(canvas, key, root, textarea) {
     event.preventDefault();
     endStroke();
   });
-
-  canvas.addEventListener("touchstart", (event) => {
-    if (tool === "idle" || tool === "type") return;
-    const touch = Array.from(event.changedTouches).find(canDrawWithTouch);
-    if (!touch) return;
-    event.preventDefault();
-    suppressPointerUntil = Date.now() + 700;
-    beginStroke(touchPoint(touch), `touch:${touch.identifier}`);
-  }, { passive: false });
-
-  canvas.addEventListener("touchmove", (event) => {
-    if (!drawing || !last || typeof activePointerId !== "string") return;
-    const touch = changedTouch(event);
-    if (!touch || !canDrawWithTouch(touch)) return;
-    event.preventDefault();
-    suppressPointerUntil = Date.now() + 700;
-    continueStroke(touchPoint(touch));
-  }, { passive: false });
-
-  canvas.addEventListener("touchend", (event) => {
-    if (!drawing || typeof activePointerId !== "string") return;
-    const touch = changedTouch(event);
-    if (!touch) return;
-    event.preventDefault();
-    suppressPointerUntil = Date.now() + 700;
-    endStroke();
-  }, { passive: false });
-
-  canvas.addEventListener("touchcancel", (event) => {
-    if (!drawing || typeof activePointerId !== "string") return;
-    const touch = changedTouch(event);
-    if (!touch) return;
-    event.preventDefault();
-    suppressPointerUntil = Date.now() + 700;
-    endStroke();
-  }, { passive: false });
 
   const eraserOptions = root.querySelector(".eraser-options");
   root.querySelectorAll("[data-eraser-size]").forEach((button) => {
@@ -961,12 +884,16 @@ function renderStrokes(ctx, strokes, width, height) {
     if (points.length < 2) return;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.lineWidth = stroke.tool === "eraser" ? stroke.width || 24 : stroke.width || 3;
     ctx.strokeStyle = stroke.tool === "eraser" ? "#ffffff" : "#111111";
-    ctx.beginPath();
-    ctx.moveTo(points[0].x * width, points[0].y * height);
-    points.slice(1).forEach((point) => ctx.lineTo(point.x * width, point.y * height));
-    ctx.stroke();
+    points.slice(1).forEach((point, index) => {
+      const previous = points[index];
+      const pressureWidth = 1.4 + ((point.p ?? previous.p ?? 0.55) * 3.2);
+      ctx.lineWidth = stroke.tool === "eraser" ? stroke.width || 24 : pressureWidth;
+      ctx.beginPath();
+      ctx.moveTo(previous.x * width, previous.y * height);
+      ctx.lineTo(point.x * width, point.y * height);
+      ctx.stroke();
+    });
   });
 }
 
@@ -1009,57 +936,26 @@ function renderScoring() {
   const story = STORIES[scoringIndex];
   const answers = storyAnswer(story.id);
   elements.scoringProgress.textContent = `Scoring ${scoringIndex + 1} / ${STORIES.length}`;
-  elements.scoringTitle.textContent = `Q${scoringIndex + 1}: TOM ability: ${story.ability}`;
-  elements.scoringTom.textContent = "";
-  elements.scoringTom.classList.add("hidden");
+  elements.scoringTitle.textContent = story.displayTitle;
+  elements.scoringTom.textContent = `TOM ability: ${story.ability}`;
   elements.scoreReminder.textContent = "";
   elements.prevScoreButton.disabled = scoringIndex === 0;
   elements.nextScoreButton.textContent = scoringIndex === STORIES.length - 1 ? "產生已評分 PDF" : "下一題";
 
   elements.scoringResponses.innerHTML = "";
-  story.questions.forEach((question, questionIndex) => {
+  story.questions.forEach((question) => {
     const card = document.createElement("section");
     card.className = "score-answer-card";
-    card.innerHTML = `<h3><span>${questionSymbol(questionIndex)}</span>${escapeHtml(question.text)}</h3>`;
-
-    if (question.type === "choice") {
-      const row = document.createElement("div");
-      row.className = "score-option-row";
-      question.options.forEach((option) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "score-choice-option";
-        button.textContent = option;
-        button.setAttribute("aria-pressed", String(answers[question.id] === option));
-        button.classList.toggle("selected", answers[question.id] === option);
-        button.addEventListener("click", () => {
-          answers[question.id] = answers[question.id] === option ? "" : option;
-          saveState();
-          renderScoring();
-        });
-        row.appendChild(button);
-      });
-      card.appendChild(row);
-    } else {
-      const textarea = document.createElement("textarea");
-      textarea.className = "score-text-input";
-      textarea.value = answers[`${question.id}Text`] || "";
-      textarea.placeholder = "補充或修改原句記錄";
-      textarea.addEventListener("input", () => {
-        answers[`${question.id}Text`] = textarea.value;
-        saveState();
-      });
-      card.appendChild(textarea);
-
-      const drawing = drawingDataUrl(answers, question.id);
-      if (drawing) {
-        const img = document.createElement("img");
-        img.alt = "手寫答案";
-        img.src = drawing;
-        card.appendChild(img);
-      }
+    const value = question.type === "choice" ? answers[question.id] || "" : answers[`${question.id}Text`] || "";
+    const answerClass = question.type === "choice" ? "choice-answer" : "text-answer";
+    card.innerHTML = `<h3><span>${questionSymbol(story.questions.indexOf(question))}</span>${escapeHtml(question.text)}</h3><p class="${answerClass}">${escapeHtml(value || "未輸入")}</p>`;
+    const drawing = question.type === "verbatim" ? drawingDataUrl(answers, question.id) : "";
+    if (drawing) {
+      const img = document.createElement("img");
+      img.alt = "手寫答案";
+      img.src = drawing;
+      card.appendChild(img);
     }
-
     elements.scoringResponses.appendChild(card);
   });
 
