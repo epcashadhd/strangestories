@@ -369,6 +369,10 @@ function saveState() {
   }, 1300);
 }
 
+function flushActiveCanvases() {
+  activeCanvases.forEach((canvasApi) => canvasApi.flush());
+}
+
 function todayString() {
   const today = new Date();
   const year = today.getFullYear();
@@ -432,6 +436,7 @@ function calculateAge(dateOfBirth, assessmentDate) {
 function renderStory() {
   const story = STORIES[currentStoryIndex];
   if (currentQuestionIndex >= story.questions.length) currentQuestionIndex = -1;
+  flushActiveCanvases();
   activeCanvases = [];
   screens.test.classList.toggle("student-mode", state.mode === "student");
   screens.test.classList.toggle("professional-mode", state.mode === "professional");
@@ -556,6 +561,8 @@ function setupCanvas(canvas, key, root, textarea) {
   let tool = "idle";
   let eraserSize = 24;
   let last = null;
+  let saveCanvasTimer = null;
+  let dirty = false;
 
   const getValue = () => {
     const [storyId, field] = key.split(".");
@@ -567,6 +574,20 @@ function setupCanvas(canvas, key, root, textarea) {
     storyAnswer(storyId)[field] = value;
     saveState();
   };
+
+  function saveCanvasNow() {
+    clearTimeout(saveCanvasTimer);
+    saveCanvasTimer = null;
+    if (!dirty || drawing) return;
+    dirty = false;
+    setValue(canvas.toDataURL("image/png"));
+  }
+
+  function scheduleCanvasSave() {
+    dirty = true;
+    clearTimeout(saveCanvasTimer);
+    saveCanvasTimer = setTimeout(saveCanvasNow, 420);
+  }
 
   function resize() {
     const rect = canvas.parentElement.getBoundingClientRect();
@@ -613,25 +634,38 @@ function setupCanvas(canvas, key, root, textarea) {
 
   canvas.addEventListener("pointerdown", (event) => {
     if (tool === "idle" || tool === "type") return;
+    event.preventDefault();
+    clearTimeout(saveCanvasTimer);
     drawing = true;
     last = point(event);
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener("pointermove", (event) => {
     if (!drawing || !last) return;
-    const next = point(event);
-    draw(last, next);
-    last = next;
+    event.preventDefault();
+    const events = event.getCoalescedEvents ? event.getCoalescedEvents() : [event];
+    events.forEach((pointerEvent) => {
+      const next = point(pointerEvent);
+      draw(last, next);
+      last = next;
+    });
+    dirty = true;
   });
-  canvas.addEventListener("pointerup", () => {
+  canvas.addEventListener("pointerup", (event) => {
     if (!drawing) return;
+    event.preventDefault();
     drawing = false;
     last = null;
-    setValue(canvas.toDataURL("image/png"));
+    if (canvas.hasPointerCapture(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
+    scheduleCanvasSave();
   });
-  canvas.addEventListener("pointercancel", () => {
+  canvas.addEventListener("pointercancel", (event) => {
+    event.preventDefault();
     drawing = false;
     last = null;
+    scheduleCanvasSave();
   });
 
   const eraserOptions = root.querySelector(".eraser-options");
@@ -666,6 +700,8 @@ function setupCanvas(canvas, key, root, textarea) {
         return;
       }
       if (selected === "clear") {
+        clearTimeout(saveCanvasTimer);
+        dirty = false;
         const rect = canvas.parentElement.getBoundingClientRect();
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, rect.width, rect.height);
@@ -704,16 +740,18 @@ function setupCanvas(canvas, key, root, textarea) {
     tool = "idle";
     drawing = false;
     last = null;
+    saveCanvasNow();
     canvas.style.pointerEvents = "none";
     textarea.style.pointerEvents = "none";
     eraserOptions.classList.add("hidden");
     root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
   }
 
-  return { resize, deactivate };
+  return { resize, deactivate, flush: saveCanvasNow };
 }
 
 function nextStory() {
+  flushActiveCanvases();
   if (currentStoryIndex < STORIES.length - 1) {
     currentStoryIndex += 1;
     currentQuestionIndex = -1;
@@ -724,6 +762,7 @@ function nextStory() {
 }
 
 function prevStory() {
+  flushActiveCanvases();
   if (currentStoryIndex > 0) {
     currentStoryIndex -= 1;
     currentQuestionIndex = -1;
@@ -939,7 +978,7 @@ function normReportHtml(norm) {
   const totalBelow = norm.total < norm.mean;
   return `
     <section class="statement">
-      Norm comparison: Total score <strong>${norm.total}</strong> is <strong>${norm.relation}</strong> the mean for age band <strong>${norm.ageBand}</strong> (mean <strong>${norm.mean.toFixed(2)}</strong>). Norms are from O’Hare et al. (2009), Table 1, question 2M.
+      Norm comparison: Total score <strong>${norm.total}</strong> is <strong>${norm.relation}</strong> the mean for age band <strong>${norm.ageBand}</strong> (mean <strong>${norm.mean.toFixed(2)}</strong>). Norms are from O’Hare et al. (2009).
     </section>
     <table>
       <thead><tr><th>Q</th><th>TOM ability</th><th>Score</th><th>Age-band mean</th><th>Comparison</th></tr></thead>

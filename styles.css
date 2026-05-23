@@ -248,6 +248,10 @@ canvas:focus-visible {
   gap: 10px;
   height: 100vh;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .tom-badge,
@@ -553,6 +557,9 @@ canvas:focus-visible {
   font-size: 1.05rem;
   line-height: 1.55;
   pointer-events: none;
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .canvas-stage {
@@ -564,6 +571,9 @@ canvas:focus-visible {
   background: white;
   overflow: hidden;
   touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 canvas {
@@ -571,6 +581,8 @@ canvas {
   width: 100%;
   height: 100%;
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .save-status {
@@ -1201,10 +1213,12 @@ canvas {
   }
 
   .test-screen {
+    display: flex;
     height: auto;
     min-height: 100svh;
     overflow: visible;
     gap: 6px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
   .tom-badge,
@@ -1214,6 +1228,8 @@ canvas {
   }
 
   .story-layout {
+    flex: 0 0 auto;
+    width: 100%;
     gap: 7px;
     min-height: 0;
   }
@@ -1369,12 +1385,15 @@ canvas {
   }
 
   .bottom-controls {
+    position: static;
     gap: 8px;
     min-height: 42px;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 1;
   }
 
   .save-status {
-    font-size: 0.72rem;
+    display: none;
   }
 
   .bottom-controls .nav-actions {
@@ -1387,6 +1406,7 @@ canvas {
     min-height: 100svh;
     overflow: visible;
     gap: 7px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 
   .scoring-screen .top-bar h2 {
@@ -1394,6 +1414,8 @@ canvas {
   }
 
   .scoring-layout {
+    flex: 0 0 auto;
+    width: 100%;
     gap: 8px;
     min-height: 0;
     overflow: visible;
@@ -1442,9 +1464,11 @@ canvas {
   }
 
   .scoring-controls {
+    position: static;
     grid-template-columns: auto 1fr auto;
     gap: 7px;
     min-height: 44px;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .score-picker {
@@ -1475,9 +1499,9 @@ canvas {
 
   .test-screen,
   .scoring-screen {
-    height: 100svh;
-    min-height: 0;
-    overflow: hidden;
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
   }
 
   .home-screen {
@@ -1549,7 +1573,7 @@ canvas {
   }
 
   .professional-mode .story-layout {
-    grid-template-columns: minmax(210px, 0.64fr) minmax(330px, 1.36fr);
+    grid-template-columns: minmax(185px, 0.58fr) minmax(0, 1.42fr);
   }
 
   .professional-mode .left-story-panel {
@@ -1591,16 +1615,16 @@ canvas {
 
   .professional-mode .canvas-stage {
     min-height: 0;
-    height: 34vh;
+    height: 48vh;
   }
 
   .scoring-layout {
-    grid-template-columns: minmax(250px, 0.92fr) minmax(300px, 1.08fr);
-    overflow: hidden;
+    grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.1fr);
+    overflow: visible;
   }
 
   .score-answer-panel {
-    overflow: hidden;
+    overflow: visible;
   }
 
   .score-answer-card img {
