@@ -554,7 +554,6 @@ function renderProfessionalAnswer(card, story, question) {
   drawing.innerHTML = `
     <div class="canvas-toolbar">
       <button class="tool-button" data-tool="pen" type="button" aria-label="手寫">${icon("pen")}</button>
-      <button class="tool-button finger-toggle" data-tool="finger" type="button" aria-label="手指書寫">${icon("finger")}</button>
       <button class="tool-button" data-tool="type" type="button" aria-label="打字">${icon("keyboard")}</button>
       <div class="eraser-menu">
         <button class="tool-button" data-tool="eraser-menu" type="button" aria-label="擦膠">${icon("eraser")}</button>
@@ -584,7 +583,6 @@ function setupCanvas(canvas, key, root, textarea) {
   let last = null;
   let saveCanvasTimer = null;
   let dirty = false;
-  let allowFingerDrawing = false;
   let activePointerId = null;
 
   const getValue = () => {
@@ -609,13 +607,13 @@ function setupCanvas(canvas, key, root, textarea) {
   function scheduleCanvasSave() {
     dirty = true;
     clearTimeout(saveCanvasTimer);
-    saveCanvasTimer = setTimeout(saveCanvasNow, 420);
+    saveCanvasTimer = setTimeout(saveCanvasNow, 2500);
   }
 
   function resize() {
     const rect = canvas.parentElement.getBoundingClientRect();
     const previous = canvas.toDataURL("image/png");
-    const ratio = Math.min(window.devicePixelRatio || 1, 1.15);
+    const ratio = 1;
     canvas.width = Math.max(1, Math.floor(rect.width * ratio));
     canvas.height = Math.max(1, Math.floor(rect.height * ratio));
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -656,7 +654,7 @@ function setupCanvas(canvas, key, root, textarea) {
   function canDrawWithPointer(event) {
     if (event.pointerType === "touch") {
       if (looksLikePalm(event)) return false;
-      return allowFingerDrawing || looksLikeStylus(event);
+      return looksLikeStylus(event);
     }
     return true;
   }
@@ -664,21 +662,19 @@ function setupCanvas(canvas, key, root, textarea) {
   function looksLikeStylus(event) {
     const width = Number(event.width) || 1;
     const height = Number(event.height) || 1;
-    return width <= 12 && height <= 12;
+    return width <= 18 && height <= 18;
   }
 
   function looksLikePalm(event) {
     const width = Number(event.width) || 1;
     const height = Number(event.height) || 1;
-    return width >= 34 || height >= 34;
+    return width >= 32 || height >= 32;
   }
 
   function updatePointerMode() {
     canvas.style.pointerEvents = tool === "idle" || tool === "type" ? "none" : "auto";
     canvas.style.touchAction = "none";
     canvas.parentElement.style.touchAction = "none";
-    root.querySelector('[data-tool="finger"]').classList.toggle("active", allowFingerDrawing);
-    root.querySelector('[data-tool="finger"]').setAttribute("aria-pressed", String(allowFingerDrawing));
   }
 
   canvas.style.pointerEvents = "none";
@@ -699,12 +695,9 @@ function setupCanvas(canvas, key, root, textarea) {
     if (activePointerId !== event.pointerId) return;
     if (!canDrawWithPointer(event)) return;
     event.preventDefault();
-    const events = event.getCoalescedEvents ? event.getCoalescedEvents() : [event];
-    events.forEach((pointerEvent) => {
-      const next = point(pointerEvent);
-      draw(last, next);
-      last = next;
-    });
+    const next = point(event);
+    draw(last, next);
+    last = next;
     dirty = true;
   });
   canvas.addEventListener("pointerup", (event) => {
@@ -740,7 +733,6 @@ function setupCanvas(canvas, key, root, textarea) {
       eraserOptions.classList.add("hidden");
       root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
       root.querySelector('[data-tool="eraser-menu"]').classList.add("active");
-      root.querySelector('[data-tool="finger"]').classList.toggle("active", allowFingerDrawing);
     });
   });
 
@@ -758,11 +750,6 @@ function setupCanvas(canvas, key, root, textarea) {
     button.addEventListener("click", () => {
       const selected = button.dataset.tool;
       textarea.placeholder = "";
-      if (selected === "finger") {
-        allowFingerDrawing = !allowFingerDrawing;
-        updatePointerMode();
-        return;
-      }
       if (selected === "eraser-menu") {
         eraserOptions.classList.toggle("hidden");
         return;
@@ -804,7 +791,6 @@ function setupCanvas(canvas, key, root, textarea) {
       eraserOptions.classList.add("hidden");
       root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
-      root.querySelector('[data-tool="finger"]').classList.toggle("active", allowFingerDrawing);
     });
   });
 
@@ -982,6 +968,8 @@ function reportHtml(includeScores) {
         .statement strong { font-weight: 800; }
         .below { color: #c62828; font-weight: 800; }
         .norm-block { break-inside: avoid; page-break-inside: avoid; }
+        .norm-overview { font-size: 8.5px; }
+        .norm-overview th, .norm-overview td { padding: 4px; text-align: center; }
         @media print { body { margin: 16mm; } }
       </style>
     </head>
@@ -1071,7 +1059,11 @@ function ageBandInfo() {
 
 function normReportHtml(norm) {
   if (!norm) {
-    return `<section class="statement">Norm comparison: Age band could not be calculated from the entered age. Enter Date of Birth and Date of assessment, or manually enter age in years.</section>`;
+    return `
+      <section class="statement">
+        Norm comparison: Age band could not be calculated from the entered age. The overall norm table is shown below for manual comparison.
+      </section>
+      ${normOverviewTableHtml()}`;
   }
   const rows = STORIES.map((story) => {
     const score = Number(state.scores[story.id]) || 0;
@@ -1098,6 +1090,37 @@ function normReportHtml(norm) {
     </table>`;
 }
 
+function normOverviewTableHtml() {
+  const rows = STORIES.map((story) => `
+    <tr>
+      <td>${escapeHtml(story.id.toUpperCase())}</td>
+      <td>${escapeHtml(story.ability)}</td>
+      ${NORM_MEANS[story.id].map((mean) => `<td>${mean.toFixed(2)}</td>`).join("")}
+      <td>${escapeHtml(NORM_P_VALUES[story.id])}</td>
+    </tr>
+  `).join("");
+  return `
+    <table class="norm-overview">
+      <thead>
+        <tr>
+          <th>Q</th>
+          <th>TOM ability</th>
+          ${NORM_AGE_BANDS.map((ageBand) => `<th>${ageBand}</th>`).join("")}
+          <th>p value</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+        <tr>
+          <td class="score">Total</td>
+          <td>All questions</td>
+          ${NORM_TOTALS.map((mean) => `<td class="score">${mean.toFixed(2)}</td>`).join("")}
+          <td>${escapeHtml(NORM_P_VALUES.total)}</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
 function referenceHtml(title, text) {
   const lines = title === "Score 0" && !text.startsWith("Incorrect") ? ["Incorrect", ...text.split("\n")] : text.split("\n");
   const body = lines.map((line) => {
@@ -1116,7 +1139,6 @@ function referenceHtml(title, text) {
 function icon(name) {
   const icons = {
     pen: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L17.5 5.5a2.1 2.1 0 0 0-3 0L4 16v4z"></path><path d="M13.5 6.5l4 4"></path></svg>',
-    finger: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12V5.8a2 2 0 0 1 4 0V12"></path><path d="M13 10.5V8a2 2 0 0 1 4 0v5"></path><path d="M17 11.5a2 2 0 0 1 4 0V15c0 4-2.8 7-7 7h-1.4a6 6 0 0 1-4.3-1.8L4 15.8a1.9 1.9 0 0 1 2.7-2.7L9 15.4"></path></svg>',
     keyboard: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h.01M11 10h.01M15 10h.01M19 10h.01M7 14h.01M11 14h6"></path></svg>',
     eraser: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15l8-8a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-5 5H9l-5-5z"></path><path d="M10 20l-6-6"></path></svg>',
     trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M10 11v6M14 11v6"></path><path d="M6 7l1 14h10l1-14"></path><path d="M9 7V4h6v3"></path></svg>',
@@ -1215,6 +1237,10 @@ document.querySelectorAll(".score-button").forEach((button) => {
 });
 
 window.addEventListener("resize", () => activeCanvases.forEach((canvasApi) => canvasApi.resize()));
+window.addEventListener("beforeunload", flushActiveCanvases);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushActiveCanvases();
+});
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" || event.shiftKey || event.metaKey || event.ctrlKey) return;
