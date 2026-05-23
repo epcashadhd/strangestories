@@ -581,9 +581,9 @@ function setupCanvas(canvas, key, root, textarea) {
   let tool = "idle";
   let eraserSize = 24;
   let last = null;
-  let saveCanvasTimer = null;
-  let dirty = false;
   let activePointerId = null;
+  let currentStroke = null;
+  let saveStrokesTimer = null;
 
   const getValue = () => {
     const [storyId, field] = key.split(".");
@@ -596,30 +596,50 @@ function setupCanvas(canvas, key, root, textarea) {
     saveState();
   };
 
-  function saveCanvasNow() {
-    clearTimeout(saveCanvasTimer);
-    saveCanvasTimer = null;
-    if (!dirty || drawing) return;
-    dirty = false;
-    setValue(canvas.toDataURL("image/png"));
+  function strokesField() {
+    const [, field] = key.split(".");
+    return field.replace("Drawing", "Strokes");
   }
 
-  function scheduleCanvasSave() {
-    dirty = true;
-    clearTimeout(saveCanvasTimer);
-    saveCanvasTimer = setTimeout(saveCanvasNow, 2500);
+  function getStrokes() {
+    const [storyId] = key.split(".");
+    return storyAnswer(storyId)[strokesField()] || [];
+  }
+
+  function setStrokes(strokes) {
+    const [storyId] = key.split(".");
+    storyAnswer(storyId)[strokesField()] = strokes;
+    saveState();
+  }
+
+  function saveStrokesNow() {
+    clearTimeout(saveStrokesTimer);
+    saveStrokesTimer = null;
+    if (currentStroke) {
+      setStrokes([...getStrokes(), currentStroke]);
+      currentStroke = null;
+    }
+  }
+
+  function scheduleStrokesSave() {
+    clearTimeout(saveStrokesTimer);
+    saveStrokesTimer = setTimeout(saveStrokesNow, 120);
   }
 
   function resize() {
     const rect = canvas.parentElement.getBoundingClientRect();
-    const previous = canvas.toDataURL("image/png");
     const ratio = 1;
     canvas.width = Math.max(1, Math.floor(rect.width * ratio));
     canvas.height = Math.max(1, Math.floor(rect.height * ratio));
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, rect.width, rect.height);
-    const saved = getValue() || previous;
+    const strokes = getStrokes();
+    if (strokes.length) {
+      renderStrokes(ctx, strokes, rect.width, rect.height);
+      return;
+    }
+    const saved = getValue();
     if (saved) drawImage(saved);
   }
 
@@ -634,17 +654,21 @@ function setupCanvas(canvas, key, root, textarea) {
 
   function point(event) {
     const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
     return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
+      x,
+      y,
+      nx: rect.width ? x / rect.width : 0,
+      ny: rect.height ? y / rect.height : 0,
     };
   }
 
-  function draw(from, to) {
+  function draw(from, to, strokeTool = tool, strokeWidth = eraserSize) {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.lineWidth = tool === "eraser" ? eraserSize : 3;
-    ctx.strokeStyle = tool === "eraser" ? "#ffffff" : "#111111";
+    ctx.lineWidth = strokeTool === "eraser" ? strokeWidth : 3;
+    ctx.strokeStyle = strokeTool === "eraser" ? "#ffffff" : "#111111";
     ctx.beginPath();
     ctx.moveTo(from.x, from.y);
     ctx.lineTo(to.x, to.y);
@@ -684,10 +708,15 @@ function setupCanvas(canvas, key, root, textarea) {
     if (tool === "idle" || tool === "type") return;
     if (!canDrawWithPointer(event)) return;
     event.preventDefault();
-    clearTimeout(saveCanvasTimer);
+    saveStrokesNow();
     drawing = true;
     activePointerId = event.pointerId;
     last = point(event);
+    currentStroke = {
+      tool,
+      width: tool === "eraser" ? eraserSize : 3,
+      points: [{ x: last.nx, y: last.ny }],
+    };
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener("pointermove", (event) => {
@@ -696,9 +725,9 @@ function setupCanvas(canvas, key, root, textarea) {
     if (!canDrawWithPointer(event)) return;
     event.preventDefault();
     const next = point(event);
-    draw(last, next);
+    draw(last, next, currentStroke.tool, currentStroke.width);
+    currentStroke.points.push({ x: next.nx, y: next.ny });
     last = next;
-    dirty = true;
   });
   canvas.addEventListener("pointerup", (event) => {
     if (!drawing) return;
@@ -710,7 +739,7 @@ function setupCanvas(canvas, key, root, textarea) {
     if (canvas.hasPointerCapture(event.pointerId)) {
       canvas.releasePointerCapture(event.pointerId);
     }
-    scheduleCanvasSave();
+    scheduleStrokesSave();
   });
   canvas.addEventListener("pointercancel", (event) => {
     if (activePointerId !== event.pointerId) return;
@@ -718,7 +747,7 @@ function setupCanvas(canvas, key, root, textarea) {
     drawing = false;
     activePointerId = null;
     last = null;
-    scheduleCanvasSave();
+    scheduleStrokesSave();
   });
 
   const eraserOptions = root.querySelector(".eraser-options");
@@ -755,15 +784,17 @@ function setupCanvas(canvas, key, root, textarea) {
         return;
       }
       if (selected === "clear") {
-        clearTimeout(saveCanvasTimer);
-        dirty = false;
+        clearTimeout(saveStrokesTimer);
+        currentStroke = null;
         const rect = canvas.parentElement.getBoundingClientRect();
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, rect.width, rect.height);
         textarea.value = "";
         const [storyId, field] = key.split(".");
         storyAnswer(storyId)[field.replace("Drawing", "Text")] = "";
-        setValue("");
+        storyAnswer(storyId)[strokesField()] = [];
+        storyAnswer(storyId)[field] = "";
+        saveState();
         textarea.placeholder = "記錄受試者的原句回答";
         root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
         eraserOptions.classList.add("hidden");
@@ -799,7 +830,7 @@ function setupCanvas(canvas, key, root, textarea) {
     drawing = false;
     activePointerId = null;
     last = null;
-    saveCanvasNow();
+    saveStrokesNow();
     canvas.style.pointerEvents = "none";
     textarea.style.pointerEvents = "none";
     updatePointerMode();
@@ -807,7 +838,37 @@ function setupCanvas(canvas, key, root, textarea) {
     root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
   }
 
-  return { resize, deactivate, flush: saveCanvasNow };
+  return { resize, deactivate, flush: saveStrokesNow };
+}
+
+function renderStrokes(ctx, strokes, width, height) {
+  strokes.forEach((stroke) => {
+    const points = stroke.points || [];
+    if (points.length < 2) return;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = stroke.tool === "eraser" ? stroke.width || 24 : stroke.width || 3;
+    ctx.strokeStyle = stroke.tool === "eraser" ? "#ffffff" : "#111111";
+    ctx.beginPath();
+    ctx.moveTo(points[0].x * width, points[0].y * height);
+    points.slice(1).forEach((point) => ctx.lineTo(point.x * width, point.y * height));
+    ctx.stroke();
+  });
+}
+
+function drawingDataUrl(answers, questionId) {
+  const strokes = answers[`${questionId}Strokes`] || [];
+  if (!strokes.length) return answers[`${questionId}Drawing`] || "";
+  const exportCanvas = document.createElement("canvas");
+  const width = 900;
+  const height = 430;
+  exportCanvas.width = width;
+  exportCanvas.height = height;
+  const exportCtx = exportCanvas.getContext("2d");
+  exportCtx.fillStyle = "#ffffff";
+  exportCtx.fillRect(0, 0, width, height);
+  renderStrokes(exportCtx, strokes, width, height);
+  return exportCanvas.toDataURL("image/png");
 }
 
 function nextStory() {
@@ -847,10 +908,11 @@ function renderScoring() {
     const value = question.type === "choice" ? answers[question.id] || "" : answers[`${question.id}Text`] || "";
     const answerClass = question.type === "choice" ? "choice-answer" : "text-answer";
     card.innerHTML = `<h3><span>${questionSymbol(story.questions.indexOf(question))}</span>${escapeHtml(question.text)}</h3><p class="${answerClass}">${escapeHtml(value || "未輸入")}</p>`;
-    if (question.type === "verbatim" && answers[`${question.id}Drawing`]) {
+    const drawing = question.type === "verbatim" ? drawingDataUrl(answers, question.id) : "";
+    if (drawing) {
       const img = document.createElement("img");
       img.alt = "手寫答案";
-      img.src = answers[`${question.id}Drawing`];
+      img.src = drawing;
       card.appendChild(img);
     }
     elements.scoringResponses.appendChild(card);
@@ -1012,8 +1074,9 @@ function reportRow(story, includeScores) {
   const answers = storyAnswer(story.id);
   const option = [answers.truth, answers.where].filter(Boolean).join(", ");
   const explanation = answers.explanationText || "";
-  const drawing = answers.explanationDrawing
-    ? `<img class="drawing" src="${answers.explanationDrawing}" alt="drawing" />`
+  const drawingSrc = drawingDataUrl(answers, "explanation");
+  const drawing = drawingSrc
+    ? `<img class="drawing" src="${drawingSrc}" alt="drawing" />`
     : "";
   const isUnscored = includeScores && state.scores[story.id] === undefined;
   const score = includeScores ? state.scores[story.id] ?? "未評分" : "";
