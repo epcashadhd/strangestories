@@ -583,6 +583,7 @@ function setupCanvas(canvas, key, root, textarea) {
   let pendingPoints = [];
   let animationFrame = null;
   let lastDrawn = null;
+  let suppressPointerUntil = 0;
 
   const getValue = () => {
     const [storyId, field] = key.split(".");
@@ -612,6 +613,7 @@ function setupCanvas(canvas, key, root, textarea) {
   }
 
   function saveStrokesNow() {
+    flushPendingDraw();
     clearTimeout(saveStrokesTimer);
     saveStrokesTimer = null;
     if (currentStroke) {
@@ -663,6 +665,18 @@ function setupCanvas(canvas, key, root, textarea) {
     };
   }
 
+  function touchPoint(touch) {
+    const rect = canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    return {
+      x,
+      y,
+      nx: rect.width ? x / rect.width : 0,
+      ny: rect.height ? y / rect.height : 0,
+    };
+  }
+
   function draw(from, to, strokeTool = tool, strokeWidth = eraserSize) {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -687,12 +701,63 @@ function setupCanvas(canvas, key, root, textarea) {
     });
   }
 
+  function flushPendingDraw() {
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+    const points = pendingPoints.splice(0);
+    points.forEach((next) => {
+      if (lastDrawn && currentStroke) draw(lastDrawn, next, currentStroke.tool, currentStroke.width);
+      lastDrawn = next;
+    });
+  }
+
+  function beginStroke(startPoint, pointerId) {
+    saveStrokesNow();
+    drawing = true;
+    activePointerId = pointerId;
+    last = startPoint;
+    lastDrawn = startPoint;
+    pendingPoints = [];
+    currentStroke = {
+      tool,
+      width: tool === "eraser" ? eraserSize : 3,
+      points: [{ x: startPoint.nx, y: startPoint.ny }],
+    };
+  }
+
+  function continueStroke(nextPoint) {
+    currentStroke.points.push({ x: nextPoint.nx, y: nextPoint.ny });
+    queueDraw(nextPoint);
+    last = nextPoint;
+  }
+
+  function endStroke() {
+    flushPendingDraw();
+    drawing = false;
+    activePointerId = null;
+    last = null;
+    lastDrawn = null;
+    scheduleStrokesSave();
+  }
+
   function canDrawWithPointer(event) {
     if (event.pointerType === "touch") {
       if (looksLikePalm(event)) return false;
       return looksLikeStylus(event);
     }
     return true;
+  }
+
+  function canDrawWithTouch(touch) {
+    if (touch.touchType === "stylus") return true;
+    const width = Number(touch.radiusX || touch.webkitRadiusX) || 1;
+    const height = Number(touch.radiusY || touch.webkitRadiusY) || 1;
+    if (width >= 28 || height >= 28) return false;
+    return width <= 14 && height <= 14;
+  }
+
+  function changedTouch(event, id = activePointerId) {
+    return Array.from(event.changedTouches).find((touch) => `touch:${touch.identifier}` === id);
   }
 
   function looksLikeStylus(event) {
@@ -718,19 +783,10 @@ function setupCanvas(canvas, key, root, textarea) {
 
   canvas.addEventListener("pointerdown", (event) => {
     if (tool === "idle" || tool === "type") return;
+    if (Date.now() < suppressPointerUntil) return;
     if (!canDrawWithPointer(event)) return;
     event.preventDefault();
-    saveStrokesNow();
-    drawing = true;
-    activePointerId = event.pointerId;
-    last = point(event);
-    lastDrawn = last;
-    pendingPoints = [];
-    currentStroke = {
-      tool,
-      width: tool === "eraser" ? eraserSize : 3,
-      points: [{ x: last.nx, y: last.ny }],
-    };
+    beginStroke(point(event), event.pointerId);
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener("pointermove", (event) => {
@@ -738,33 +794,58 @@ function setupCanvas(canvas, key, root, textarea) {
     if (activePointerId !== event.pointerId) return;
     if (!canDrawWithPointer(event)) return;
     event.preventDefault();
-    const next = point(event);
-    currentStroke.points.push({ x: next.nx, y: next.ny });
-    queueDraw(next);
-    last = next;
+    continueStroke(point(event));
   });
   canvas.addEventListener("pointerup", (event) => {
     if (!drawing) return;
     if (activePointerId !== event.pointerId) return;
     event.preventDefault();
-    drawing = false;
-    activePointerId = null;
-    last = null;
-    lastDrawn = null;
+    endStroke();
     if (canvas.hasPointerCapture(event.pointerId)) {
       canvas.releasePointerCapture(event.pointerId);
     }
-    scheduleStrokesSave();
   });
   canvas.addEventListener("pointercancel", (event) => {
     if (activePointerId !== event.pointerId) return;
     event.preventDefault();
-    drawing = false;
-    activePointerId = null;
-    last = null;
-    lastDrawn = null;
-    scheduleStrokesSave();
+    endStroke();
   });
+
+  canvas.addEventListener("touchstart", (event) => {
+    if (tool === "idle" || tool === "type") return;
+    const touch = Array.from(event.changedTouches).find(canDrawWithTouch);
+    if (!touch) return;
+    event.preventDefault();
+    suppressPointerUntil = Date.now() + 700;
+    beginStroke(touchPoint(touch), `touch:${touch.identifier}`);
+  }, { passive: false });
+
+  canvas.addEventListener("touchmove", (event) => {
+    if (!drawing || !last || typeof activePointerId !== "string") return;
+    const touch = changedTouch(event);
+    if (!touch || !canDrawWithTouch(touch)) return;
+    event.preventDefault();
+    suppressPointerUntil = Date.now() + 700;
+    continueStroke(touchPoint(touch));
+  }, { passive: false });
+
+  canvas.addEventListener("touchend", (event) => {
+    if (!drawing || typeof activePointerId !== "string") return;
+    const touch = changedTouch(event);
+    if (!touch) return;
+    event.preventDefault();
+    suppressPointerUntil = Date.now() + 700;
+    endStroke();
+  }, { passive: false });
+
+  canvas.addEventListener("touchcancel", (event) => {
+    if (!drawing || typeof activePointerId !== "string") return;
+    const touch = changedTouch(event);
+    if (!touch) return;
+    event.preventDefault();
+    suppressPointerUntil = Date.now() + 700;
+    endStroke();
+  }, { passive: false });
 
   const eraserOptions = root.querySelector(".eraser-options");
   root.querySelectorAll("[data-eraser-size]").forEach((button) => {

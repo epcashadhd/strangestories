@@ -674,14 +674,15 @@ canvas {
 .professional-mode .question-list {
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(220px, 0.34fr) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   align-items: stretch;
+  gap: 8px;
   min-height: 0;
 }
 
 .professional-mode .canvas-stage {
-  height: clamp(430px, 66vh, 680px);
-  min-height: 360px;
+  height: clamp(280px, 45vh, 460px);
+  min-height: 250px;
 }
 
 .professional-mode .verbatim-card {
@@ -689,7 +690,7 @@ canvas {
 }
 
 .professional-mode .choice-card h3 {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: clamp(0.98rem, 1.05vw, 1.08rem);
   line-height: 1.25;
   display: flex;
@@ -697,14 +698,18 @@ canvas {
   gap: 8px;
 }
 
-.professional-mode .choice-card .option-row {
-  flex-wrap: nowrap;
+.professional-mode .choice-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: auto;
+  padding: 10px 12px;
 }
 
-.professional-mode .choice-card {
-  display: block;
-  min-height: auto;
-  padding: 12px;
+.professional-mode .choice-card .option-row {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  margin-left: auto;
 }
 
 .professional-mode .choice-card h3 span {
@@ -1395,8 +1400,13 @@ canvas {
   }
 
   .professional-mode .question-card h3 {
-    margin-bottom: 6px;
+    margin-bottom: 0;
     font-size: 0.86rem;
+  }
+
+  .professional-mode .choice-card {
+    display: flex;
+    align-items: center;
   }
 
   .professional-mode .choice-card h3 span {
@@ -1414,7 +1424,7 @@ canvas {
 
   .professional-mode .canvas-stage {
     min-height: 170px;
-    height: 30vh;
+    height: 34vh;
   }
 
   .merged-textarea {
@@ -1627,21 +1637,7 @@ canvas {
   }
 
   .professional-mode .story-layout {
-    grid-template-columns: minmax(185px, 0.58fr) minmax(0, 1.42fr);
-  }
-
-  .professional-mode .left-story-panel {
-    gap: 5px;
-  }
-
-  .professional-mode .story-visual {
-    aspect-ratio: auto;
-    flex: 1 1 0;
-  }
-
-  .professional-mode .side-question-list {
-    display: grid;
-    gap: 5px;
+    grid-template-columns: 1fr;
   }
 
   .professional-mode .story-text {
@@ -1668,8 +1664,8 @@ canvas {
   }
 
   .professional-mode .canvas-stage {
-    min-height: 0;
-    height: 48vh;
+    min-height: 180px;
+    height: 42vh;
   }
 
   .scoring-layout {
