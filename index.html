@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Strange Stories</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="homeScreen" class="screen home-screen">
+        <div class="home-copy">
+          <p class="kicker">Strange Stories</p>
+          <h1>故事理解任務</h1>
+          <p class="script">
+            你好。等陣我會讀幾個短故事俾你聽，每個故事之後會有幾條問題。
+            請你留心聽故事，然後按照你自己的想法回答。這裡沒有需要急住答的地方；
+            如果你想我再讀一次故事，可以同我講。
+          </p>
+        </div>
+
+        <div class="home-actions" aria-label="選擇版本">
+          <button id="studentModeButton" class="primary-action large-action" type="button">
+            學生
+          </button>
+          <button id="professionalModeButton" class="primary-action large-action" type="button">
+            專業人員
+          </button>
+        </div>
+
+        <div class="home-tools">
+          <button id="clientInfoButton" class="secondary-action" type="button">
+            輸入 Client Information
+          </button>
+          <button id="clearRecordButton" class="danger-action" type="button">
+            清理過去記錄
+          </button>
+        </div>
+      </section>
+
+      <section id="clientScreen" class="screen form-screen hidden">
+        <header class="top-bar">
+          <div>
+            <p class="kicker">Client Information</p>
+            <h2>學生資料</h2>
+          </div>
+          <button class="ghost-action" data-go-home type="button">返回首頁</button>
+        </header>
+
+        <form id="clientForm" class="client-form">
+          <label>
+            <span>Name of Student (English)</span>
+            <input id="studentEnglishName" name="englishName" autocomplete="off" />
+          </label>
+          <label>
+            <span>Name of Student (Chinese)</span>
+            <input id="studentChineseName" name="chineseName" autocomplete="off" />
+          </label>
+          <label>
+            <span>School</span>
+            <input id="school" name="school" autocomplete="off" />
+          </label>
+          <label>
+            <span>Class</span>
+            <input id="className" name="className" autocomplete="off" />
+          </label>
+          <label>
+            <span>Date of assessment</span>
+            <input id="assessmentDate" name="assessmentDate" type="date" inputmode="numeric" pattern="\d{4}-\d{2}-\d{2}" />
+          </label>
+          <label>
+            <span>Date of Birth</span>
+            <input id="dateOfBirth" name="dateOfBirth" type="date" inputmode="numeric" pattern="\d{4}-\d{2}-\d{2}" />
+          </label>
+          <label>
+            <span>Age</span>
+            <input id="age" name="age" autocomplete="off" />
+          </label>
+        </form>
+        <div class="form-actions">
+          <button id="confirmClientButton" class="primary-action" type="button">確定並儲存</button>
+          <p id="clientSaveMessage" class="save-message" role="status"></p>
+        </div>
+      </section>
+
+      <section id="testScreen" class="screen test-screen hidden">
+        <header class="top-bar">
+          <div>
+            <p class="kicker" id="modeLabel">學生版本</p>
+            <h2 id="storyTitle"></h2>
+          </div>
+          <div class="top-actions">
+            <button class="ghost-action" data-go-home type="button">首頁</button>
+          </div>
+        </header>
+
+        <div id="tomBadge" class="tom-badge hidden"></div>
+
+        <div class="story-layout">
+          <aside class="left-story-panel">
+            <figure class="story-visual">
+              <img id="storyImage" alt="" />
+            </figure>
+            <div id="sideQuestionList" class="side-question-list"></div>
+          </aside>
+
+          <article class="prompt-panel">
+            <p id="storyText" class="story-text"></p>
+            <div id="questionList" class="question-list"></div>
+          </article>
+        </div>
+
+        <footer class="bottom-controls">
+          <p id="saveStatus" class="save-status">自動儲存中</p>
+          <div class="nav-actions">
+            <button id="prevButton" class="ghost-action" type="button">上一題</button>
+            <button id="nextButton" class="primary-action" type="button">下一題</button>
+          </div>
+        </footer>
+      </section>
+
+      <section id="generateScreen" class="screen generate-screen hidden">
+        <header class="top-bar">
+          <div>
+            <p class="kicker">Record</p>
+            <h2>完成 12 條題目</h2>
+          </div>
+          <button class="ghost-action" data-go-home type="button">返回首頁</button>
+        </header>
+
+        <div class="choice-grid">
+          <button id="generateBlankPdfButton" class="report-choice" type="button">
+            <strong>產生記錄（不評分）</strong>
+            <span>輸出 PDF，保留分數空格，方便列印後手動評分。</span>
+          </button>
+          <button id="startScoringButton" class="report-choice" type="button">
+            <strong>進入評分頁</strong>
+            <span>查看已輸入答案、進行評分，完成後輸出已評分 PDF。</span>
+          </button>
+        </div>
+        <button id="backToQ12Button" class="ghost-action back-to-last" type="button">返回上一頁</button>
+      </section>
+
+      <section id="thankScreen" class="screen thank-screen hidden">
+        <div class="thank-copy">
+          <p class="kicker">完成</p>
+          <h2>謝謝你回答所有問題。</h2>
+          <p class="script">你已經完成今天的故事任務，可以休息一下。</p>
+          <button id="studentBackToQ12Button" class="ghost-action large-action" type="button">返回上一題</button>
+          <button class="primary-action large-action" data-go-home type="button">返回首頁</button>
+        </div>
+      </section>
+
+      <section id="scoringScreen" class="screen scoring-screen hidden">
+        <header class="top-bar">
+          <div>
+            <p class="kicker" id="scoringProgress">Scoring</p>
+            <h2 id="scoringTitle"></h2>
+          </div>
+          <button class="ghost-action" data-go-home type="button">首頁</button>
+        </header>
+
+        <div class="scoring-layout">
+          <article class="score-answer-panel">
+            <p class="tom-line" id="scoringTom"></p>
+            <div id="scoringResponses"></div>
+          </article>
+
+          <article class="reference-panel">
+            <h3>Suggested Answer Reference</h3>
+            <div id="scoringReference"></div>
+          </article>
+        </div>
+
+        <footer class="bottom-controls scoring-controls">
+          <div class="score-picker" aria-label="選擇分數">
+            <button class="score-button" data-score="0" type="button"><span>Score</span>0</button>
+            <button class="score-button" data-score="1" type="button"><span>Score</span>1</button>
+            <button class="score-button" data-score="2" type="button"><span>Score</span>2</button>
+          </div>
+          <p id="scoreReminder" class="score-reminder" role="status"></p>
+          <div class="nav-actions">
+            <button id="prevScoreButton" class="ghost-action" type="button">上一題</button>
+            <button id="nextScoreButton" class="primary-action" type="button">下一題</button>
+          </div>
+        </footer>
+      </section>
+    </main>
+
+    <div id="clearDialog" class="dialog-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="clearDialogTitle">
+      <section class="soft-dialog">
+        <h2 id="clearDialogTitle">確定要清理所有記錄嗎？</h2>
+        <p>清理後，學生資料、答案、手寫內容和評分都會被刪除。</p>
+        <div class="dialog-actions">
+          <button id="cancelClearButton" class="dialog-cancel" type="button">取消</button>
+          <button id="confirmClearButton" class="dialog-confirm" type="button">確定</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
