@@ -32,6 +32,12 @@
           <button id="clientInfoButton" class="secondary-action" type="button">
             輸入學生資料
           </button>
+          <button id="homeScoringButton" class="secondary-action" type="button">
+            評分
+          </button>
+          <button id="normsButton" class="secondary-action" type="button">
+            常模
+          </button>
           <button id="clearRecordButton" class="danger-action" type="button">
             清理過去記錄
           </button>
@@ -184,6 +190,23 @@
             <button id="nextScoreButton" class="primary-action" type="button">下一題</button>
           </div>
         </footer>
+      </section>
+
+      <section id="normsScreen" class="screen norms-screen hidden">
+        <header class="top-bar">
+          <div>
+            <p class="kicker">Norms</p>
+            <h2>整體常模</h2>
+          </div>
+          <button class="ghost-action" data-go-home type="button">返回首頁</button>
+        </header>
+
+        <div class="norms-table-wrap">
+          <table class="norms-table">
+            <thead id="normsTableHead"></thead>
+            <tbody id="normsTableBody"></tbody>
+          </table>
+        </div>
       </section>
     </main>
 

@@ -290,6 +290,21 @@ const scoreSkipWarnings = {};
 
 const NORM_AGE_BANDS = ["5;0-5;11", "6;0-6;11", "7;0-7;11", "8;0-8;11", "9;0-9;11", "10;0-10;11", "11;0-11;11", "12;0-12;11"];
 const NORM_TOTALS = [4.67, 6.35, 10.88, 11.65, 15.06, 15.57, 14.68, 19.0];
+const NORM_P_VALUES = {
+  q1: "0.004",
+  q2: "<0.001",
+  q3: "<0.001",
+  q4: "<0.001",
+  q5: "<0.001",
+  q6: "0.002",
+  q7: "<0.001",
+  q8: "0.006",
+  q9: "<0.001",
+  q10: "0.001",
+  q11: "<0.001",
+  q12: "0.001",
+  total: "<0.001",
+};
 const NORM_MEANS = {
   q1: [0.75, 0.83, 1.44, 1.43, 1.33, 1.57, 1.45, 1.29],
   q2: [0.0, 0.09, 0.62, 0.62, 0.78, 0.9, 1.14, 1.71],
@@ -312,12 +327,15 @@ const screens = {
   generate: document.querySelector("#generateScreen"),
   thank: document.querySelector("#thankScreen"),
   scoring: document.querySelector("#scoringScreen"),
+  norms: document.querySelector("#normsScreen"),
 };
 
 const elements = {
   studentModeButton: document.querySelector("#studentModeButton"),
   professionalModeButton: document.querySelector("#professionalModeButton"),
   clientInfoButton: document.querySelector("#clientInfoButton"),
+  homeScoringButton: document.querySelector("#homeScoringButton"),
+  normsButton: document.querySelector("#normsButton"),
   clearRecordButton: document.querySelector("#clearRecordButton"),
   clearDialog: document.querySelector("#clearDialog"),
   cancelClearButton: document.querySelector("#cancelClearButton"),
@@ -350,6 +368,8 @@ const elements = {
   scoreReminder: document.querySelector("#scoreReminder"),
   backToQ12Button: document.querySelector("#backToQ12Button"),
   studentBackToQ12Button: document.querySelector("#studentBackToQ12Button"),
+  normsTableHead: document.querySelector("#normsTableHead"),
+  normsTableBody: document.querySelector("#normsTableBody"),
 };
 
 function loadState() {
@@ -534,6 +554,7 @@ function renderProfessionalAnswer(card, story, question) {
   drawing.innerHTML = `
     <div class="canvas-toolbar">
       <button class="tool-button" data-tool="pen" type="button" aria-label="手寫">${icon("pen")}</button>
+      <button class="tool-button finger-toggle" data-tool="finger" type="button" aria-label="手指書寫">${icon("finger")}</button>
       <button class="tool-button" data-tool="type" type="button" aria-label="打字">${icon("keyboard")}</button>
       <div class="eraser-menu">
         <button class="tool-button" data-tool="eraser-menu" type="button" aria-label="擦膠">${icon("eraser")}</button>
@@ -563,6 +584,7 @@ function setupCanvas(canvas, key, root, textarea) {
   let last = null;
   let saveCanvasTimer = null;
   let dirty = false;
+  let allowFingerDrawing = false;
 
   const getValue = () => {
     const [storyId, field] = key.split(".");
@@ -592,7 +614,7 @@ function setupCanvas(canvas, key, root, textarea) {
   function resize() {
     const rect = canvas.parentElement.getBoundingClientRect();
     const previous = canvas.toDataURL("image/png");
-    const ratio = window.devicePixelRatio || 1;
+    const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
     canvas.width = Math.max(1, Math.floor(rect.width * ratio));
     canvas.height = Math.max(1, Math.floor(rect.height * ratio));
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -630,10 +652,25 @@ function setupCanvas(canvas, key, root, textarea) {
     ctx.stroke();
   }
 
+  function canDrawWithPointer(event) {
+    if (event.pointerType === "touch") return allowFingerDrawing;
+    return true;
+  }
+
+  function updatePointerMode() {
+    canvas.style.pointerEvents = tool === "idle" || tool === "type" ? "none" : "auto";
+    canvas.style.touchAction = allowFingerDrawing ? "none" : "pan-y";
+    canvas.parentElement.style.touchAction = allowFingerDrawing ? "none" : "pan-y";
+    root.querySelector('[data-tool="finger"]').classList.toggle("active", allowFingerDrawing);
+    root.querySelector('[data-tool="finger"]').setAttribute("aria-pressed", String(allowFingerDrawing));
+  }
+
   canvas.style.pointerEvents = "none";
+  updatePointerMode();
 
   canvas.addEventListener("pointerdown", (event) => {
     if (tool === "idle" || tool === "type") return;
+    if (!canDrawWithPointer(event)) return;
     event.preventDefault();
     clearTimeout(saveCanvasTimer);
     drawing = true;
@@ -642,6 +679,7 @@ function setupCanvas(canvas, key, root, textarea) {
   });
   canvas.addEventListener("pointermove", (event) => {
     if (!drawing || !last) return;
+    if (!canDrawWithPointer(event)) return;
     event.preventDefault();
     const events = event.getCoalescedEvents ? event.getCoalescedEvents() : [event];
     events.forEach((pointerEvent) => {
@@ -676,9 +714,11 @@ function setupCanvas(canvas, key, root, textarea) {
       textarea.placeholder = "";
       canvas.style.pointerEvents = "auto";
       textarea.style.pointerEvents = "none";
+      updatePointerMode();
       eraserOptions.classList.add("hidden");
       root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
       root.querySelector('[data-tool="eraser-menu"]').classList.add("active");
+      root.querySelector('[data-tool="finger"]').classList.toggle("active", allowFingerDrawing);
     });
   });
 
@@ -688,6 +728,7 @@ function setupCanvas(canvas, key, root, textarea) {
     textarea.placeholder = "";
     canvas.style.pointerEvents = "auto";
     textarea.style.pointerEvents = "none";
+    updatePointerMode();
     root.querySelector('[data-tool="pen"]').classList.add("active");
   });
 
@@ -695,6 +736,11 @@ function setupCanvas(canvas, key, root, textarea) {
     button.addEventListener("click", () => {
       const selected = button.dataset.tool;
       textarea.placeholder = "";
+      if (selected === "finger") {
+        allowFingerDrawing = !allowFingerDrawing;
+        updatePointerMode();
+        return;
+      }
       if (selected === "eraser-menu") {
         eraserOptions.classList.toggle("hidden");
         return;
@@ -715,12 +761,14 @@ function setupCanvas(canvas, key, root, textarea) {
         tool = "idle";
         canvas.style.pointerEvents = "none";
         textarea.style.pointerEvents = "none";
+        updatePointerMode();
         return;
       }
       if (selected === "type") {
         tool = selected;
         canvas.style.pointerEvents = "none";
         textarea.style.pointerEvents = "auto";
+        updatePointerMode();
         textarea.focus();
         eraserOptions.classList.add("hidden");
         root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
@@ -730,9 +778,11 @@ function setupCanvas(canvas, key, root, textarea) {
       tool = selected;
       canvas.style.pointerEvents = "auto";
       textarea.style.pointerEvents = "none";
+      updatePointerMode();
       eraserOptions.classList.add("hidden");
       root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
+      root.querySelector('[data-tool="finger"]').classList.toggle("active", allowFingerDrawing);
     });
   });
 
@@ -743,6 +793,7 @@ function setupCanvas(canvas, key, root, textarea) {
     saveCanvasNow();
     canvas.style.pointerEvents = "none";
     textarea.style.pointerEvents = "none";
+    updatePointerMode();
     eraserOptions.classList.add("hidden");
     root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
   }
@@ -813,6 +864,35 @@ function startScoring() {
   scoringIndex = 0;
   renderScoring();
   showScreen("scoring");
+}
+
+function showNorms() {
+  elements.normsTableHead.innerHTML = `
+    <tr>
+      <th>Q</th>
+      <th>TOM ability</th>
+      ${NORM_AGE_BANDS.map((ageBand) => `<th>${ageBand}</th>`).join("")}
+      <th>p value</th>
+    </tr>
+  `;
+  const rows = STORIES.map((story) => `
+    <tr>
+      <td>${escapeHtml(story.id.toUpperCase())}</td>
+      <td>${escapeHtml(story.ability)}</td>
+      ${NORM_MEANS[story.id].map((mean) => `<td>${mean.toFixed(2)}</td>`).join("")}
+      <td>${escapeHtml(NORM_P_VALUES[story.id])}</td>
+    </tr>
+  `).join("");
+  elements.normsTableBody.innerHTML = `
+    ${rows}
+    <tr class="norm-total-row">
+      <td>Total</td>
+      <td>All questions</td>
+      ${NORM_TOTALS.map((mean) => `<td>${mean.toFixed(2)}</td>`).join("")}
+      <td>${escapeHtml(NORM_P_VALUES.total)}</td>
+    </tr>
+  `;
+  showScreen("norms");
 }
 
 function setScore(score) {
@@ -937,8 +1017,9 @@ function reportRow(story, includeScores) {
 }
 
 function normSummary(total) {
-  const ageIndex = ageBandIndex();
-  if (ageIndex === -1) return null;
+  const ageInfo = ageBandInfo();
+  if (!ageInfo) return null;
+  const { ageIndex, note } = ageInfo;
   const mean = NORM_TOTALS[ageIndex];
   return {
     ageBand: NORM_AGE_BANDS[ageIndex],
@@ -946,16 +1027,23 @@ function normSummary(total) {
     total,
     relation: total >= mean ? "at or above" : "below",
     ageIndex,
+    note,
   };
 }
 
-function ageBandIndex() {
+function ageBandInfo() {
   const age = state.client.age || "";
   const match = age.match(/(\d+)/);
-  if (!match) return -1;
+  if (!match) return null;
   const years = Number(match[1]);
-  if (years < 5 || years > 12) return -1;
-  return years - 5;
+  if (years < 5) return null;
+  if (years > 12) {
+    return {
+      ageIndex: NORM_AGE_BANDS.length - 1,
+      note: `The entered age is above the available norm range; the highest available norm band (${NORM_AGE_BANDS[NORM_AGE_BANDS.length - 1]}) was used for comparison.`,
+    };
+  }
+  return { ageIndex: years - 5, note: "" };
 }
 
 function normReportHtml(norm) {
@@ -979,6 +1067,7 @@ function normReportHtml(norm) {
   return `
     <section class="statement">
       Norm comparison: Total score <strong>${norm.total}</strong> is <strong>${norm.relation}</strong> the mean for age band <strong>${norm.ageBand}</strong> (mean <strong>${norm.mean.toFixed(2)}</strong>). Norms are from O’Hare et al. (2009).
+      ${norm.note ? `<br><strong>Note:</strong> ${escapeHtml(norm.note)}` : ""}
     </section>
     <table>
       <thead><tr><th>Q</th><th>TOM ability</th><th>Score</th><th>Age-band mean</th><th>Comparison</th></tr></thead>
@@ -1004,6 +1093,7 @@ function referenceHtml(title, text) {
 function icon(name) {
   const icons = {
     pen: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0 0-3L17.5 5.5a2.1 2.1 0 0 0-3 0L4 16v4z"></path><path d="M13.5 6.5l4 4"></path></svg>',
+    finger: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12V5.8a2 2 0 0 1 4 0V12"></path><path d="M13 10.5V8a2 2 0 0 1 4 0v5"></path><path d="M17 11.5a2 2 0 0 1 4 0V15c0 4-2.8 7-7 7h-1.4a6 6 0 0 1-4.3-1.8L4 15.8a1.9 1.9 0 0 1 2.7-2.7L9 15.4"></path></svg>',
     keyboard: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h.01M11 10h.01M15 10h.01M19 10h.01M7 14h.01M11 14h6"></path></svg>',
     eraser: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15l8-8a2 2 0 0 1 3 0l5 5a2 2 0 0 1 0 3l-5 5H9l-5-5z"></path><path d="M10 20l-6-6"></path></svg>',
     trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M10 11v6M14 11v6"></path><path d="M6 7l1 14h10l1-14"></path><path d="M9 7V4h6v3"></path></svg>',
@@ -1026,6 +1116,8 @@ elements.clientInfoButton.addEventListener("click", () => {
   renderClientForm();
   showScreen("client");
 });
+elements.homeScoringButton.addEventListener("click", startScoring);
+elements.normsButton.addEventListener("click", showNorms);
 elements.clearRecordButton.addEventListener("click", () => {
   elements.clearDialog.classList.remove("hidden");
 });

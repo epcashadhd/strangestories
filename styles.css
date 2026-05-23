@@ -749,7 +749,8 @@ canvas {
 }
 
 .generate-screen,
-.scoring-screen {
+.scoring-screen,
+.norms-screen {
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -773,6 +774,50 @@ canvas {
   display: grid;
   grid-template-columns: repeat(2, minmax(240px, 1fr));
   gap: 18px;
+}
+
+.norms-table-wrap {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow);
+}
+
+.norms-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: clamp(0.86rem, 1vw, 0.98rem);
+}
+
+.norms-table th,
+.norms-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.norms-table th:nth-child(2),
+.norms-table td:nth-child(2) {
+  text-align: left;
+}
+
+.norms-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: var(--secondary-strong);
+  background: #fff7f0;
+  font-weight: 820;
+}
+
+.norm-total-row td {
+  color: var(--primary-strong);
+  background: #fff2ef;
+  font-weight: 840;
 }
 
 .report-choice {
