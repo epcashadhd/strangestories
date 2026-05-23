@@ -585,6 +585,7 @@ function setupCanvas(canvas, key, root, textarea) {
   let saveCanvasTimer = null;
   let dirty = false;
   let allowFingerDrawing = false;
+  let activePointerId = null;
 
   const getValue = () => {
     const [storyId, field] = key.split(".");
@@ -614,7 +615,7 @@ function setupCanvas(canvas, key, root, textarea) {
   function resize() {
     const rect = canvas.parentElement.getBoundingClientRect();
     const previous = canvas.toDataURL("image/png");
-    const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+    const ratio = Math.min(window.devicePixelRatio || 1, 1.15);
     canvas.width = Math.max(1, Math.floor(rect.width * ratio));
     canvas.height = Math.max(1, Math.floor(rect.height * ratio));
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -653,14 +654,29 @@ function setupCanvas(canvas, key, root, textarea) {
   }
 
   function canDrawWithPointer(event) {
-    if (event.pointerType === "touch") return allowFingerDrawing;
+    if (event.pointerType === "touch") {
+      if (looksLikePalm(event)) return false;
+      return allowFingerDrawing || looksLikeStylus(event);
+    }
     return true;
+  }
+
+  function looksLikeStylus(event) {
+    const width = Number(event.width) || 1;
+    const height = Number(event.height) || 1;
+    return width <= 12 && height <= 12;
+  }
+
+  function looksLikePalm(event) {
+    const width = Number(event.width) || 1;
+    const height = Number(event.height) || 1;
+    return width >= 34 || height >= 34;
   }
 
   function updatePointerMode() {
     canvas.style.pointerEvents = tool === "idle" || tool === "type" ? "none" : "auto";
-    canvas.style.touchAction = allowFingerDrawing ? "none" : "pan-y";
-    canvas.parentElement.style.touchAction = allowFingerDrawing ? "none" : "pan-y";
+    canvas.style.touchAction = "none";
+    canvas.parentElement.style.touchAction = "none";
     root.querySelector('[data-tool="finger"]').classList.toggle("active", allowFingerDrawing);
     root.querySelector('[data-tool="finger"]').setAttribute("aria-pressed", String(allowFingerDrawing));
   }
@@ -674,11 +690,13 @@ function setupCanvas(canvas, key, root, textarea) {
     event.preventDefault();
     clearTimeout(saveCanvasTimer);
     drawing = true;
+    activePointerId = event.pointerId;
     last = point(event);
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener("pointermove", (event) => {
     if (!drawing || !last) return;
+    if (activePointerId !== event.pointerId) return;
     if (!canDrawWithPointer(event)) return;
     event.preventDefault();
     const events = event.getCoalescedEvents ? event.getCoalescedEvents() : [event];
@@ -691,8 +709,10 @@ function setupCanvas(canvas, key, root, textarea) {
   });
   canvas.addEventListener("pointerup", (event) => {
     if (!drawing) return;
+    if (activePointerId !== event.pointerId) return;
     event.preventDefault();
     drawing = false;
+    activePointerId = null;
     last = null;
     if (canvas.hasPointerCapture(event.pointerId)) {
       canvas.releasePointerCapture(event.pointerId);
@@ -700,8 +720,10 @@ function setupCanvas(canvas, key, root, textarea) {
     scheduleCanvasSave();
   });
   canvas.addEventListener("pointercancel", (event) => {
+    if (activePointerId !== event.pointerId) return;
     event.preventDefault();
     drawing = false;
+    activePointerId = null;
     last = null;
     scheduleCanvasSave();
   });
@@ -789,6 +811,7 @@ function setupCanvas(canvas, key, root, textarea) {
   function deactivate() {
     tool = "idle";
     drawing = false;
+    activePointerId = null;
     last = null;
     saveCanvasNow();
     canvas.style.pointerEvents = "none";
