@@ -1119,6 +1119,503 @@ canvas {
   }
 }
 
+@media (max-width: 430px), (max-width: 700px) and (max-height: 430px) {
+  body::before {
+    opacity: 0.72;
+  }
+
+  .screen {
+    padding: 10px;
+  }
+
+  .primary-action,
+  .secondary-action,
+  .danger-action,
+  .ghost-action {
+    width: auto;
+    min-height: 38px;
+    padding: 8px 14px;
+    font-size: 0.92rem;
+  }
+
+  .large-action {
+    min-width: 132px;
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  .top-bar,
+  .bottom-controls,
+  .scoring-controls {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .top-bar {
+    gap: 8px;
+  }
+
+  .top-actions,
+  .home-tools,
+  .home-actions,
+  .nav-actions {
+    width: auto;
+  }
+
+  .bottom-controls .nav-actions,
+  .nav-actions {
+    justify-content: flex-end;
+  }
+
+  .kicker {
+    margin-bottom: 3px;
+    font-size: 0.68rem;
+  }
+
+  h1 {
+    margin-bottom: 12px;
+    font-size: clamp(2rem, 12vw, 3rem);
+  }
+
+  h2 {
+    font-size: clamp(1.1rem, 6vw, 1.55rem);
+  }
+
+  h3 {
+    margin-bottom: 8px;
+  }
+
+  .script {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .home-screen {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .home-actions,
+  .home-tools {
+    gap: 8px;
+  }
+
+  .test-screen {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    gap: 6px;
+  }
+
+  .tom-badge,
+  .tom-line {
+    padding: 4px 9px;
+    font-size: 0.78rem;
+  }
+
+  .story-layout {
+    gap: 7px;
+    min-height: 0;
+  }
+
+  .left-story-panel,
+  .prompt-panel,
+  .question-list,
+  .side-question-list {
+    gap: 7px;
+  }
+
+  .story-visual {
+    border-radius: 13px;
+  }
+
+  .story-text {
+    padding: 9px 10px;
+    border-left-width: 3px;
+    border-radius: 13px;
+    font-size: 0.82rem;
+    line-height: 1.36;
+  }
+
+  .question-card,
+  .score-answer-card,
+  .reference-section {
+    border-radius: 13px;
+    padding: 9px;
+  }
+
+  .question-card h3 {
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+
+  .option-row {
+    gap: 7px;
+  }
+
+  .option-button,
+  .score-button {
+    min-width: 58px;
+    min-height: 34px;
+    padding: 5px 12px;
+    font-size: 0.9rem;
+  }
+
+  .student-mode .story-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .student-mode .story-visual {
+    aspect-ratio: 16 / 9;
+  }
+
+  .student-mode .story-text {
+    font-size: 0.86rem;
+  }
+
+  .student-mode .question-card {
+    min-height: 48px;
+    padding: 7px;
+  }
+
+  .student-mode .question-card:not(.open) {
+    padding: 6px;
+  }
+
+  .student-mode .question-card.open {
+    min-height: 105px;
+  }
+
+  .student-question-toggle {
+    gap: 9px;
+    min-height: 38px;
+    font-size: 1rem;
+  }
+
+  .student-question-toggle span {
+    width: 34px;
+    height: 34px;
+    font-size: 0.92rem;
+  }
+
+  .student-mode .question-card h3 {
+    font-size: 1.02rem;
+  }
+
+  .professional-mode .top-bar h2 {
+    font-size: 1.1rem;
+  }
+
+  .professional-mode .story-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .professional-mode .story-visual {
+    flex-basis: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .professional-mode .story-text {
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .professional-mode .question-card {
+    padding: 8px;
+  }
+
+  .professional-mode .question-card h3 {
+    margin-bottom: 6px;
+    font-size: 0.86rem;
+  }
+
+  .professional-mode .choice-card h3 span {
+    width: 18px;
+    height: 18px;
+    margin-right: 5px;
+    font-size: 0.68rem;
+  }
+
+  .canvas-stage {
+    min-height: 160px;
+    height: 28vh;
+    border-radius: 18px;
+  }
+
+  .professional-mode .canvas-stage {
+    min-height: 170px;
+    height: 30vh;
+  }
+
+  .merged-textarea {
+    padding: 58px 12px 12px;
+    font-size: 0.9rem;
+  }
+
+  .canvas-toolbar {
+    top: 8px;
+    left: 8px;
+    gap: 7px;
+  }
+
+  .tool-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tool-button svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .bottom-controls {
+    gap: 8px;
+    min-height: 42px;
+  }
+
+  .save-status {
+    font-size: 0.72rem;
+  }
+
+  .bottom-controls .nav-actions {
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  .scoring-screen {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    gap: 7px;
+  }
+
+  .scoring-screen .top-bar h2 {
+    font-size: 1.35rem;
+  }
+
+  .scoring-layout {
+    gap: 8px;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .reference-panel {
+    border-radius: 13px;
+    padding: 10px;
+  }
+
+  .reference-panel h3 {
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+  }
+
+  .score-answer-panel {
+    gap: 5px;
+    overflow: visible;
+  }
+
+  .score-answer-card {
+    padding: 8px;
+  }
+
+  .score-answer-card h3 {
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+  }
+
+  .score-answer-card p,
+  .reference-score strong,
+  .reference-score em,
+  .reference-score span {
+    font-size: 0.78rem;
+    line-height: 1.25;
+  }
+
+  .choice-answer {
+    padding: 5px 10px;
+    font-size: 0.82rem;
+  }
+
+  .score-answer-card img {
+    max-height: 10vh;
+    margin-top: 5px;
+  }
+
+  .scoring-controls {
+    grid-template-columns: auto 1fr auto;
+    gap: 7px;
+    min-height: 44px;
+  }
+
+  .score-picker {
+    gap: 6px;
+    min-height: 42px;
+  }
+
+  .score-button {
+    min-width: 54px;
+    min-height: 40px;
+    font-size: 1.02rem;
+  }
+
+  .score-button span {
+    font-size: 0.58rem;
+  }
+
+  .score-reminder {
+    min-height: 18px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 700px) and (max-height: 430px) and (orientation: landscape) {
+  .screen {
+    padding: 7px 9px;
+  }
+
+  .test-screen,
+  .scoring-screen {
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .home-screen {
+    grid-template-columns: minmax(250px, 1fr) auto;
+    justify-content: center;
+    align-content: center;
+    gap: 12px;
+  }
+
+  .home-copy {
+    max-width: 520px;
+  }
+
+  .home-actions,
+  .home-tools {
+    justify-content: flex-start;
+  }
+
+  .home-actions {
+    flex-direction: column;
+  }
+
+  .home-tools {
+    grid-column: 1 / -1;
+  }
+
+  .top-bar {
+    min-height: 34px;
+  }
+
+  .test-screen .top-bar h2 {
+    font-size: clamp(1rem, 3.4vw, 1.42rem);
+  }
+
+  .student-mode .story-layout {
+    grid-template-columns: minmax(230px, 0.88fr) minmax(260px, 1.12fr);
+  }
+
+  .student-mode .story-visual {
+    aspect-ratio: auto;
+    flex: 1;
+  }
+
+  .student-mode .story-text {
+    font-size: clamp(0.66rem, 1.75vw, 0.8rem);
+    line-height: 1.26;
+  }
+
+  .student-mode .question-list {
+    align-content: start;
+  }
+
+  .student-mode .question-card {
+    min-height: 42px;
+  }
+
+  .student-mode .question-card.open {
+    min-height: 88px;
+  }
+
+  .student-question-toggle {
+    min-height: 34px;
+    font-size: clamp(0.88rem, 2.6vw, 1rem);
+  }
+
+  .student-question-toggle span {
+    width: 30px;
+    height: 30px;
+  }
+
+  .professional-mode .story-layout {
+    grid-template-columns: minmax(210px, 0.64fr) minmax(330px, 1.36fr);
+  }
+
+  .professional-mode .left-story-panel {
+    gap: 5px;
+  }
+
+  .professional-mode .story-visual {
+    aspect-ratio: auto;
+    flex: 1 1 0;
+  }
+
+  .professional-mode .side-question-list {
+    display: grid;
+    gap: 5px;
+  }
+
+  .professional-mode .story-text {
+    font-size: clamp(0.66rem, 1.7vw, 0.78rem);
+    line-height: 1.24;
+    padding: 8px 9px;
+  }
+
+  .professional-mode .question-list {
+    gap: 5px;
+  }
+
+  .professional-mode .question-card h3 {
+    font-size: clamp(0.72rem, 1.9vw, 0.86rem);
+    line-height: 1.18;
+  }
+
+  .professional-mode .choice-card {
+    padding: 7px;
+  }
+
+  .professional-mode .choice-card .option-row {
+    gap: 5px;
+  }
+
+  .professional-mode .canvas-stage {
+    min-height: 0;
+    height: 34vh;
+  }
+
+  .scoring-layout {
+    grid-template-columns: minmax(250px, 0.92fr) minmax(300px, 1.08fr);
+    overflow: hidden;
+  }
+
+  .score-answer-panel {
+    overflow: hidden;
+  }
+
+  .score-answer-card img {
+    max-height: 8vh;
+  }
+
+  .reference-score {
+    padding: 6px 0;
+  }
+
+  .reference-section {
+    padding: 8px;
+  }
+}
+
 @media print {
   body {
     background: white;
