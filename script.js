@@ -1434,6 +1434,19 @@ document.addEventListener("pointerdown", (event) => {
   activeCanvases.forEach((canvasApi) => canvasApi.deactivate());
 });
 
+let lastTapAt = 0;
+document.addEventListener(
+  "touchend",
+  (event) => {
+    const now = Date.now();
+    if (now - lastTapAt < 330 && !event.target.closest("input, textarea, canvas, .merged-input")) {
+      event.preventDefault();
+    }
+    lastTapAt = now;
+  },
+  { passive: false }
+);
+
 elements.prevButton.addEventListener("click", prevStory);
 elements.nextButton.addEventListener("click", nextStory);
 elements.generateBlankPdfButton.addEventListener("click", () => generateReport({ includeScores: false }));

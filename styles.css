@@ -41,6 +41,7 @@ body {
     "Noto Sans TC", "Microsoft JhengHei", sans-serif;
   background: var(--surface);
   color: var(--ink);
+  touch-action: manipulation;
 }
 
 button,
@@ -51,6 +52,7 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 input,
@@ -1793,6 +1795,17 @@ canvas {
   }
 }
 
+@media (max-width: 700px) {
+  .professional-mode .choice-card h3,
+  .score-answer-card h3,
+  .score-reminder {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    word-break: keep-all;
+    overflow-wrap: normal;
+  }
+}
+
 @media (max-width: 390px) {
   .screen {
     padding-inline: 10px;
@@ -1857,6 +1870,25 @@ canvas {
     min-height: 112px;
   }
 
+  .professional-mode .choice-card {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 9px;
+  }
+
+  .professional-mode .choice-card h3 {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .professional-mode .choice-card .option-row {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .bottom-controls {
     align-items: flex-end;
     justify-content: flex-end;
@@ -1891,10 +1923,14 @@ canvas {
 
   .score-reminder {
     width: 100%;
+    grid-column: 1 / -1;
     min-height: 0;
     text-align: center;
     white-space: normal;
-    writing-mode: horizontal-tb;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    word-break: keep-all;
+    overflow-wrap: normal;
     line-height: 1.35;
   }
 
@@ -1918,6 +1954,9 @@ canvas {
   }
 
   .screen {
+    width: min(390px, 100%);
+    max-width: 390px;
+    margin-inline: auto;
     padding: 7px 9px;
   }
 
@@ -1962,6 +2001,8 @@ canvas {
 
   .student-mode .story-layout {
     grid-template-columns: 1fr !important;
+    display: flex;
+    flex-direction: column;
   }
 
   .student-mode .story-visual {
@@ -2016,10 +2057,16 @@ canvas {
   }
 
   .professional-mode .choice-card {
+    display: grid;
+    grid-template-columns: 1fr;
     padding: 7px;
   }
 
   .professional-mode .choice-card .option-row {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
     gap: 5px;
   }
 
@@ -2031,6 +2078,31 @@ canvas {
   .scoring-layout {
     grid-template-columns: 1fr !important;
     overflow: visible;
+  }
+
+  .scoring-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .score-picker,
+  .scoring-controls .nav-actions,
+  .score-reminder {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+
+  .score-picker {
+    justify-content: center;
+  }
+
+  .score-reminder {
+    text-align: center;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    word-break: keep-all;
+    overflow-wrap: normal;
   }
 
   .score-answer-panel {
