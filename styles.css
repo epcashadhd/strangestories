@@ -254,6 +254,10 @@ canvas:focus-visible {
   user-select: none;
 }
 
+.test-screen .top-bar h2 {
+  display: none;
+}
+
 .tom-badge,
 .tom-line {
   display: inline-flex;
@@ -633,16 +637,20 @@ canvas {
 }
 
 .professional-mode .top-bar h2 {
-  font-size: clamp(1.25rem, 2vw, 2rem);
+  display: none;
 }
 
 .professional-mode .story-layout {
-  grid-template-columns: minmax(270px, 0.58fr) minmax(500px, 1.42fr);
+  grid-template-columns: 1fr;
 }
 
+.professional-mode .left-story-panel,
 .professional-mode .story-text {
-  font-size: clamp(0.92rem, 1.12vw, 1.08rem);
-  line-height: 1.43;
+  display: none;
+}
+
+.professional-mode .prompt-panel {
+  grid-column: 1 / -1;
 }
 
 .professional-mode .question-card {
@@ -666,13 +674,14 @@ canvas {
 .professional-mode .question-list {
   flex: 1;
   display: grid;
+  grid-template-columns: minmax(220px, 0.34fr) minmax(0, 1fr);
   align-items: stretch;
   min-height: 0;
 }
 
 .professional-mode .canvas-stage {
-  height: clamp(300px, 45vh, 520px);
-  min-height: 270px;
+  height: clamp(430px, 66vh, 680px);
+  min-height: 360px;
 }
 
 .professional-mode .verbatim-card {

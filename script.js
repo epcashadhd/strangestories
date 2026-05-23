@@ -462,7 +462,7 @@ function renderStory() {
   screens.test.classList.toggle("professional-mode", state.mode === "professional");
   elements.saveStatus.classList.toggle("hidden", state.mode === "student");
   elements.modeLabel.textContent = state.mode === "professional" ? "專業人員版本" : "學生版本";
-  elements.storyTitle.textContent = story.displayTitle;
+  elements.storyTitle.textContent = "";
   elements.storyImage.src = story.image;
   elements.storyImage.alt = story.alt;
   elements.storyText.textContent = story.story;
@@ -489,11 +489,7 @@ function renderStory() {
       renderProfessionalAnswer(card, story, question);
     }
 
-    if (question.type === "choice") {
-      elements.sideQuestionList.appendChild(card);
-    } else {
-      elements.questionList.appendChild(card);
-    }
+    elements.questionList.appendChild(card);
   });
 
   requestAnimationFrame(() => activeCanvases.forEach((canvasApi) => canvasApi.resize()));
@@ -584,6 +580,9 @@ function setupCanvas(canvas, key, root, textarea) {
   let activePointerId = null;
   let currentStroke = null;
   let saveStrokesTimer = null;
+  let pendingPoints = [];
+  let animationFrame = null;
+  let lastDrawn = null;
 
   const getValue = () => {
     const [storyId, field] = key.split(".");
@@ -623,7 +622,7 @@ function setupCanvas(canvas, key, root, textarea) {
 
   function scheduleStrokesSave() {
     clearTimeout(saveStrokesTimer);
-    saveStrokesTimer = setTimeout(saveStrokesNow, 120);
+    saveStrokesTimer = setTimeout(saveStrokesNow, 1500);
   }
 
   function resize() {
@@ -675,6 +674,19 @@ function setupCanvas(canvas, key, root, textarea) {
     ctx.stroke();
   }
 
+  function queueDraw(pointToDraw) {
+    pendingPoints.push(pointToDraw);
+    if (animationFrame) return;
+    animationFrame = requestAnimationFrame(() => {
+      animationFrame = null;
+      const points = pendingPoints.splice(0);
+      points.forEach((next) => {
+        if (lastDrawn) draw(lastDrawn, next, currentStroke.tool, currentStroke.width);
+        lastDrawn = next;
+      });
+    });
+  }
+
   function canDrawWithPointer(event) {
     if (event.pointerType === "touch") {
       if (looksLikePalm(event)) return false;
@@ -712,6 +724,8 @@ function setupCanvas(canvas, key, root, textarea) {
     drawing = true;
     activePointerId = event.pointerId;
     last = point(event);
+    lastDrawn = last;
+    pendingPoints = [];
     currentStroke = {
       tool,
       width: tool === "eraser" ? eraserSize : 3,
@@ -725,8 +739,8 @@ function setupCanvas(canvas, key, root, textarea) {
     if (!canDrawWithPointer(event)) return;
     event.preventDefault();
     const next = point(event);
-    draw(last, next, currentStroke.tool, currentStroke.width);
     currentStroke.points.push({ x: next.nx, y: next.ny });
+    queueDraw(next);
     last = next;
   });
   canvas.addEventListener("pointerup", (event) => {
@@ -736,6 +750,7 @@ function setupCanvas(canvas, key, root, textarea) {
     drawing = false;
     activePointerId = null;
     last = null;
+    lastDrawn = null;
     if (canvas.hasPointerCapture(event.pointerId)) {
       canvas.releasePointerCapture(event.pointerId);
     }
@@ -747,6 +762,7 @@ function setupCanvas(canvas, key, root, textarea) {
     drawing = false;
     activePointerId = null;
     last = null;
+    lastDrawn = null;
     scheduleStrokesSave();
   });
 
@@ -758,6 +774,7 @@ function setupCanvas(canvas, key, root, textarea) {
       textarea.placeholder = "";
       canvas.style.pointerEvents = "auto";
       textarea.style.pointerEvents = "none";
+      textarea.style.display = "none";
       updatePointerMode();
       eraserOptions.classList.add("hidden");
       root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
@@ -771,6 +788,7 @@ function setupCanvas(canvas, key, root, textarea) {
     textarea.placeholder = "";
     canvas.style.pointerEvents = "auto";
     textarea.style.pointerEvents = "none";
+    textarea.style.display = "none";
     updatePointerMode();
     root.querySelector('[data-tool="pen"]').classList.add("active");
   });
@@ -785,6 +803,10 @@ function setupCanvas(canvas, key, root, textarea) {
       }
       if (selected === "clear") {
         clearTimeout(saveStrokesTimer);
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+        pendingPoints = [];
+        lastDrawn = null;
         currentStroke = null;
         const rect = canvas.parentElement.getBoundingClientRect();
         ctx.fillStyle = "#ffffff";
@@ -801,6 +823,7 @@ function setupCanvas(canvas, key, root, textarea) {
         tool = "idle";
         canvas.style.pointerEvents = "none";
         textarea.style.pointerEvents = "none";
+        textarea.style.display = "block";
         updatePointerMode();
         return;
       }
@@ -808,6 +831,7 @@ function setupCanvas(canvas, key, root, textarea) {
         tool = selected;
         canvas.style.pointerEvents = "none";
         textarea.style.pointerEvents = "auto";
+        textarea.style.display = "block";
         updatePointerMode();
         textarea.focus();
         eraserOptions.classList.add("hidden");
@@ -818,6 +842,7 @@ function setupCanvas(canvas, key, root, textarea) {
       tool = selected;
       canvas.style.pointerEvents = "auto";
       textarea.style.pointerEvents = "none";
+      textarea.style.display = "none";
       updatePointerMode();
       eraserOptions.classList.add("hidden");
       root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
@@ -830,9 +855,14 @@ function setupCanvas(canvas, key, root, textarea) {
     drawing = false;
     activePointerId = null;
     last = null;
+    lastDrawn = null;
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+    pendingPoints = [];
     saveStrokesNow();
     canvas.style.pointerEvents = "none";
     textarea.style.pointerEvents = "none";
+    textarea.style.display = "block";
     updatePointerMode();
     eraserOptions.classList.add("hidden");
     root.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
