@@ -1447,6 +1447,24 @@ document.addEventListener(
   { passive: false }
 );
 
+document.addEventListener(
+  "dblclick",
+  (event) => {
+    if (!event.target.closest("input, textarea, canvas, .merged-input")) event.preventDefault();
+  },
+  { passive: false }
+);
+
+["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
+  document.addEventListener(
+    eventName,
+    (event) => {
+      if (!event.target.closest("input, textarea, canvas, .merged-input")) event.preventDefault();
+    },
+    { passive: false }
+  );
+});
+
 elements.prevButton.addEventListener("click", prevStory);
 elements.nextButton.addEventListener("click", nextStory);
 elements.generateBlankPdfButton.addEventListener("click", () => generateReport({ includeScores: false }));

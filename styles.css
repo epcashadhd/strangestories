@@ -1833,6 +1833,40 @@ canvas {
     white-space: nowrap;
   }
 
+  .dialog-backdrop {
+    padding: 18px;
+  }
+
+  .soft-dialog {
+    width: min(100%, 330px);
+    border-radius: 26px;
+    padding: 26px 18px 22px;
+  }
+
+  .soft-dialog h2 {
+    font-size: 1.55rem;
+    line-height: 1.22;
+  }
+
+  .soft-dialog p {
+    margin: 12px 0 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .dialog-actions {
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .dialog-cancel,
+  .dialog-confirm {
+    min-width: 0;
+    width: 50%;
+    min-height: 48px;
+    font-size: 1.1rem;
+  }
+
   .student-mode .story-layout {
     display: flex;
     flex-direction: column;
@@ -2119,6 +2153,260 @@ canvas {
 
   .reference-section {
     padding: 8px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 430px) and (hover: none) {
+  html,
+  body {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .app-shell {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    min-height: 100svh;
+    visibility: visible !important;
+  }
+
+  .screen {
+    width: min(390px, 100%);
+    max-width: 390px;
+    min-height: auto;
+    margin-inline: auto;
+    padding: 10px 10px calc(18px + env(safe-area-inset-bottom));
+    overflow: visible;
+  }
+
+  .home-screen,
+  .test-screen,
+  .generate-screen,
+  .thank-screen,
+  .form-screen,
+  .scoring-screen,
+  .norms-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .home-screen {
+    justify-content: center;
+    min-height: 100svh;
+    text-align: center;
+  }
+
+  .top-bar,
+  .bottom-controls,
+  .scoring-controls {
+    position: static !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .top-bar {
+    justify-content: space-between;
+  }
+
+  .tom-badge,
+  .tom-line,
+  .scoring-screen .top-bar h2 {
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px 10px;
+    font-size: 0.82rem;
+    line-height: 1.2;
+  }
+
+  .story-layout,
+  .student-mode .story-layout,
+  .professional-mode .story-layout,
+  .scoring-layout {
+    display: flex !important;
+    flex: 0 0 auto;
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .left-story-panel,
+  .prompt-panel,
+  .score-answer-panel,
+  .reference-panel {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .story-visual {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    flex: 0 0 auto;
+  }
+
+  .story-text {
+    width: 100%;
+    margin: 0;
+    padding: 9px 11px;
+    font-size: 0.86rem;
+    line-height: 1.38;
+  }
+
+  .question-list,
+  .student-mode .question-list,
+  .professional-mode .question-list {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .question-card,
+  .student-mode .question-card,
+  .professional-mode .question-card,
+  .score-answer-card,
+  .reference-panel,
+  .reference-section {
+    width: 100%;
+    min-height: 0;
+    padding: 9px;
+    overflow: visible;
+  }
+
+  .student-mode .question-card.open {
+    min-height: 110px;
+  }
+
+  .student-question-toggle {
+    min-height: 42px;
+    font-size: 1rem;
+  }
+
+  .student-question-toggle span {
+    width: 34px;
+    height: 34px;
+  }
+
+  .professional-mode .choice-card,
+  .score-answer-card {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .professional-mode .choice-card h3,
+  .score-answer-card h3,
+  .score-reminder {
+    width: 100%;
+    min-width: 0;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  .professional-mode .choice-card .option-row,
+  .score-option-row {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .professional-mode .canvas-stage {
+    height: 260px;
+    min-height: 260px;
+  }
+
+  .merged-textarea {
+    padding: 58px 12px 12px;
+    font-size: 0.9rem;
+  }
+
+  .reference-panel {
+    max-height: none;
+  }
+
+  #scoringReference {
+    max-height: 52svh;
+    overflow: auto;
+  }
+
+  .scoring-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .score-picker,
+  .scoring-controls .nav-actions,
+  .score-reminder {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+
+  .score-picker {
+    justify-content: center;
+    gap: 7px;
+    min-height: 0;
+  }
+
+  .score-button {
+    min-width: 72px;
+    min-height: 48px;
+    font-size: 1.08rem;
+  }
+
+  .score-button span {
+    font-size: 0.58rem;
+  }
+
+  .score-reminder {
+    min-height: 0;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  .nav-actions,
+  .bottom-controls .nav-actions,
+  .scoring-controls .nav-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .bottom-controls .ghost-action,
+  .bottom-controls .primary-action,
+  .scoring-controls .ghost-action,
+  .scoring-controls .primary-action {
+    min-width: 112px;
+    min-height: 44px;
+    padding-inline: 16px;
+    font-size: 0.98rem;
   }
 }
 
